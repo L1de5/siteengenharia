@@ -3,7 +3,7 @@
   "short_name": "Music Header",
   "theme_color": "#2196f3",
   "background_color": "#2196f3",
-  "display": "fullscreen",
+  "display": "minimal UI",
   "Scope": "/",
   "start_url": "https://l1de5.github.io/siteengenharia/index.html",
   "icons": [
