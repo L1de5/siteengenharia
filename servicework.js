@@ -1,64 +1,63 @@
-//This is the service worker with the Cache-first network
+var CACHE_NAME = 'static-v1';
 
-var CACHE = 'pwabuilder-precache';
-var precacheFiles = [
-    /* Add an array of files to precache for your app */
-];
-
-//Install stage sets up the cache-array to configure pre-cache content
-self.addEventListener('install', function (evt) {
-    console.log('The service worker is being installed.');
-    evt.waitUntil(precache().then(function () {
-        console.log('[ServiceWorker] Skip waiting on install');
-        return self.skipWaiting();
-
+self.addEventListener('install', function (event) {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(function (cache) {
+      return cache.addAll([
+        '/index.html',
+        'css/creative.min.css',
+        'css/font-awesome.min.css',
+        'css/style.css',
+        'font/fontaweome-webfont.eot',
+        'font/fontaweome-webfont.ttf',
+        'font/fontaweome-webfont.woff',
+        'font/fontaweome-webfont.woff2',
+        'font/fontello.eot',
+        'font/fontello.svg',
+        'font/fontello.ttf',
+        'font/fontello.woff',
+        'images/contact-image.jpg',
+        'images/example-work01.jpg',
+        'images/icons/icon-72x72.png',
+        'images/icons/icon-96x96.png',
+        'images/icons/icon-128x128.png',
+        'images/icons/icon-144x144.png',
+        'images/icons/icon-152x152.png',
+        'images/icons/icon-192x192.png',
+        'images/icons/icon-384x384.png',
+        'images/icons/icon-512x512.png',
+        '/cadastro.html',
+        '/home.html',
+        '/musica.html',
+        '/perfil.html',
+        '/senha.html',
+        '/sobre.html',
+        '/styles.css',
+        '/manifest.json',
+      ]);
     })
-    );
+  )
 });
 
-
-//allow sw to control of current page
-self.addEventListener('activate', function (event) {
-    console.log('[ServiceWorker] Claiming clients for current page');
-    return self.clients.claim();
-
+self.addEventListener('activate', function activator(event) {
+  event.waitUntil(
+    caches.keys().then(function (keys) {
+      return Promise.all(keys
+        .filter(function (key) {
+          return key.indexOf(CACHE_NAME) !== 0;
+        })
+        .map(function (key) {
+          return caches.delete(key);
+        })
+      );
+    })
+  );
 });
 
-self.addEventListener('fetch', function (evt) {
-    console.log('The service worker is serving the asset.' + evt.request.url);
-    evt.respondWith(fromCache(evt.request).catch(fromServer(evt.request)));
-    evt.waitUntil(update(evt.request));
+self.addEventListener('fetch', function (event) {
+  event.respondWith(
+    caches.match(event.request).then(function (cachedResponse) {
+      return cachedResponse || fetch(event.request);
+    })
+  );
 });
-
-
-function precache() {
-    return caches.open(CACHE).then(function (cache) {
-        return cache.addAll(precacheFiles);
-    });
-}
-
-
-function fromCache(request) {
-    //we pull files from the cache first thing so we can show them fast
-    return caches.open(CACHE).then(function (cache) {
-        return cache.match(request).then(function (matching) {
-            return matching || Promise.reject('no-match');
-        });
-    });
-}
-
-
-function update(request) {
-    //this is where we call the server to get the newest version of the 
-    //file to use the next time we show view
-    return caches.open(CACHE).then(function (cache) {
-        return fetch(request).then(function (response) {
-            return cache.put(request, response);
-        });
-    });
-}
-
-function fromServer(request) {
-    //this is the fallback if it is not in the cahche to go to the server and get it
-    return fetch(request).then(function (response) { return response })
-}
